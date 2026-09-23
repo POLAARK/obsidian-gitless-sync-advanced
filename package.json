@@ -1,6 +1,6 @@
 {
   "name": "github-gitless-sync-advanced",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sync a GitHub repository with vaults on different platforms without requiring git installation, with advanced git-like operations",
   "main": "main.js",
   "scripts": {
