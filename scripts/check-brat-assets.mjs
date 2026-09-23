@@ -47,7 +47,7 @@ const repo = arg("repo", process.env.GLS_REPO || "POLAARK/obsidian-gitless-sync-
 const forcedTag = typeof arg("tag", "") === "string" ? arg("tag", "") : "";
 const interval = Number(arg("interval", 300)) || 300;
 const once = has("once");
-const notify = has("--notify") || has("notify");
+const notify = has("notify");
 const rawToken = arg("token", process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "");
 const token = typeof rawToken === "string" ? rawToken : "";
 
