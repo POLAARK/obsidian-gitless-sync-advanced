@@ -189,6 +189,76 @@ export default class GitHubSyncSettingsTab extends PluginSettingTab {
           });
       });
 
+    new Setting(containerEl).setName("Advanced").setHeading();
+
+    new Setting(containerEl)
+      .setName("Advanced mode")
+      .setDesc(
+        "Open the operations panel instead of syncing immediately, exposing pull, push and force operations",
+      )
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.advancedMode)
+          .onChange(async (value) => {
+            this.plugin.settings.advancedMode = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Backup branch before force operations")
+      .setDesc(
+        "Create a branch pointing at the current remote state before a force pull or force push",
+      )
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.autoBackupOnForce)
+          .onChange(async (value) => {
+            this.plugin.settings.autoBackupOnForce = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Default commit message")
+      .setDesc("Message used for the commits created by push operations")
+      .addText((text) =>
+        text
+          .setPlaceholder("Sync")
+          .setValue(this.plugin.settings.commitMessage)
+          .onChange(async (value) => {
+            this.plugin.settings.commitMessage = value;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Ignore patterns")
+      .setDesc(
+        "One glob per line. Matching files are never synced. " +
+          "Supports * and **, lines starting with # are comments.",
+      )
+      .addTextArea((area) => {
+        area
+          .setPlaceholder(".DS_Store\nattachments/private/**")
+          .setValue(this.plugin.settings.ignorePatterns)
+          .onChange(async (value) => {
+            this.plugin.settings.ignorePatterns = value;
+            await this.plugin.saveSettings();
+          });
+        area.inputEl.rows = 4;
+        area.inputEl.cols = 40;
+      });
+
+    new Setting(containerEl)
+      .setName("Git operations")
+      .setDesc("Open the advanced operations panel")
+      .addButton((button) =>
+        button.setButtonText("Open").onClick(() => {
+          this.plugin.openGitOperationsModal();
+        }),
+      );
+
     new Setting(containerEl).setName("Interface").setHeading();
 
     new Setting(containerEl)

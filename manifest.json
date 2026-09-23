@@ -1,11 +1,10 @@
 {
-  "id": "github-gitless-sync",
-  "name": "GitHub Gitless Sync",
-  "version": "1.0.7",
+  "id": "github-gitless-sync-advanced",
+  "name": "GitHub Gitless Sync (Advanced)",
+  "version": "1.0.0",
   "minAppVersion": "1.7.7",
-  "description": "Sync a GitHub repository with vaults on different platforms without requiring git installation",
-  "author": "Silvano Cerza",
+  "description": "Sync a GitHub repository with vaults on different platforms without requiring git, with an advanced mode exposing pull, push and force operations",
+  "author": "Silvano Cerza (advanced fork)",
   "authorUrl": "https://silvanocerza.com",
-  "fundingUrl": "https://ko-fi.com/silvanocerza",
   "isDesktopOnly": false
 }

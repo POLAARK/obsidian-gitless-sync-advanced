@@ -1,6 +1,13 @@
-# GitHub Gitless Sync
+# GitHub Gitless Sync (Advanced)
 
 Plugin to sync a GitHub repository with an Obsidian vault.
+
+> [!NOTE]
+> This is a personal fork of [silvanocerza/github-gitless-sync](https://github.com/silvanocerza/github-gitless-sync)
+> that adds an advanced operations panel with pull, push, force pull/push, status
+> and backup branches. It is still completely gitless: everything goes through the
+> GitHub REST API and works on desktop and mobile. Licensed under AGPL-3.0, the
+> original author and license are preserved.
 
 I highly recommend not using this plugin with another sync service.
 This might create problems for this plugin when determining what needs to be synced between remote repository and local vault.
@@ -15,8 +22,10 @@ These are the main features of the plugin:
 - Automatic sync on fixed interval
 - Manual sync
 - Conflict resolution view
-
-- Filtering by file type (TODO 🔨)
+- Advanced operations panel: pull, push, force pull, force push, status
+- Backup branches before destructive force operations
+- Configurable commit messages
+- Ignore patterns
 
 ## Installation
 
@@ -37,7 +46,16 @@ Please also provide logs if possible, you can copy them from the settings page. 
 ### First sync
 
 > [!IMPORTANT]
-> The first sync will only work if either the remote repository or the local vault are completely **EMPTY**. If both contain files the first sync will fail.
+> When both the remote repository and the local vault contain files and there is
+> no shared sync metadata yet, the plugin no longer fails. It opens the operations
+> panel and asks you to choose how to reconcile the two sides:
+>
+> - **Use remote** — overwrite the local vault with the remote content
+> - **Use local** — overwrite the remote repository with the local content
+> - **Merge** — keep both sides; files present on both sides with different
+>   content are treated as conflicts and handled by the conflict settings
+
+If one side is empty the first sync just copies the other side, as before.
 
 You must also configure the plugin settings before syncing.
 
@@ -69,6 +87,30 @@ This will always work even if sync on interval is enabled.
 If you don't want to see the button you can hide it, just check the plugin settings.
 
 The `Sync with GitHub` command is also available.
+
+### Advanced operations
+
+Enable **Advanced mode** in the settings (on by default) to make the sync button
+open an operations panel instead of syncing immediately. The panel shows a status
+summary and exposes:
+
+- **Sync** — the regular two-way sync
+- **Pull** — only bring remote changes into the local vault
+- **Push** — only send local changes to the remote
+- **Force pull** — make the local vault identical to the remote, deleting local
+  files that are not on the remote
+- **Force push** — replace the remote content with the local files, deleting
+  remote files that are not local
+
+Each operation is also available as a command in the command palette.
+
+When **Backup branch before force operations** is enabled, a branch named
+`gitless-backup-<timestamp>` is created on the remote before a force operation,
+so the previous state can be recovered.
+
+You can also configure the **commit message**, the **conflict handling** strategy
+and **ignore patterns** (one glob per line, supports `*` and `**`) directly from
+the panel or the settings.
 
 ### Conflict resolution
 

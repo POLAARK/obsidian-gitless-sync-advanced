@@ -14,6 +14,11 @@ export interface GitHubSyncSettings {
   showSyncRibbonButton: boolean;
   showConflictsRibbonButton: boolean;
   enableLogging: boolean;
+  // Advanced operations
+  advancedMode: boolean;
+  autoBackupOnForce: boolean;
+  commitMessage: string;
+  ignorePatterns: string;
 }
 
 export const DEFAULT_SETTINGS: GitHubSyncSettings = {
@@ -32,4 +37,8 @@ export const DEFAULT_SETTINGS: GitHubSyncSettings = {
   showSyncRibbonButton: true,
   showConflictsRibbonButton: true,
   enableLogging: false,
+  advancedMode: true,
+  autoBackupOnForce: true,
+  commitMessage: "Sync",
+  ignorePatterns: "",
 };

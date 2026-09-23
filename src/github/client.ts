@@ -129,7 +129,7 @@ export default class GithubClient {
     retry = false,
     maxRetries = 5,
   }: {
-    tree: { tree: NewTreeRequestItem[]; base_tree: string };
+    tree: { tree: NewTreeRequestItem[]; base_tree?: string };
     retry?: boolean;
     maxRetries?: number;
   }) {
@@ -277,6 +277,81 @@ export default class GithubClient {
         `Failed to update branch head sha, status ${response.status}`,
       );
     }
+  }
+
+  /**
+   * Creates a new git ref, used mainly to create backup branches before
+   * destructive operations (force push/pull).
+   *
+   * @param ref Full ref name, for example `refs/heads/my-backup`
+   * @param sha The SHA the ref must point to
+   * @param retry Whether to retry the request on failure (default: false)
+   * @param maxRetries Maximum number of retry attempts (default: 5)
+   */
+  async createRef({
+    ref,
+    sha,
+    retry = false,
+    maxRetries = 5,
+  }: {
+    ref: string;
+    sha: string;
+    retry?: boolean;
+    maxRetries?: number;
+  }): Promise<void> {
+    const response = await retryUntil(
+      async () => {
+        return requestUrl({
+          url: `https://api.github.com/repos/${this.settings.githubOwner}/${this.settings.githubRepo}/git/refs`,
+          headers: this.headers(),
+          method: "POST",
+          body: JSON.stringify({ ref, sha }),
+          throw: false,
+        });
+      },
+      (res) => res.status !== 422,
+      retry ? maxRetries : 0,
+    );
+
+    if (response.status < 200 || response.status >= 400) {
+      await this.logger.error("Failed to create ref", response);
+      throw new GithubAPIError(
+        response.status,
+        `Failed to create ref ${ref}, status ${response.status}`,
+      );
+    }
+  }
+
+  /**
+   * Gets a git ref.
+   *
+   * @param ref Full ref name, for example `refs/heads/main`
+   * @returns The SHA the ref points to, or null when the ref does not exist
+   */
+  async getRef(ref: string): Promise<string | null> {
+    const response = await retryUntil(
+      async () => {
+        return requestUrl({
+          url: `https://api.github.com/repos/${this.settings.githubOwner}/${this.settings.githubRepo}/git/ref/${ref}`,
+          headers: this.headers(),
+          throw: false,
+        });
+      },
+      (res) => res.status !== 422,
+      0,
+    );
+
+    if (response.status === 404) {
+      return null;
+    }
+    if (response.status < 200 || response.status >= 400) {
+      await this.logger.error("Failed to get ref", response);
+      throw new GithubAPIError(
+        response.status,
+        `Failed to get ref ${ref}, status ${response.status}`,
+      );
+    }
+    return response.json.object.sha;
   }
 
   /**

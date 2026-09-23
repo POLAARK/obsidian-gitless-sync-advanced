@@ -1,7 +1,7 @@
 {
-  "name": "github-gitless-sync",
-  "version": "1.0.7",
-  "description": "Sync a GitHub repository with vaults on different platforms without requiring git installation",
+  "name": "github-gitless-sync-advanced",
+  "version": "1.0.0",
+  "description": "Sync a GitHub repository with vaults on different platforms without requiring git installation, with advanced git-like operations",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

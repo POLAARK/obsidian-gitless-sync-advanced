@@ -3,6 +3,7 @@ import MetadataStore, { MANIFEST_FILE_NAME } from "./metadata-store";
 import { GitHubSyncSettings } from "./settings/settings";
 import Logger, { LOG_FILE_NAME } from "./logger";
 import GitHubSyncPlugin from "./main";
+import { isIgnoredPath, parseIgnorePatterns } from "./utils";
 
 /**
  * Tracks changes to local sync directory and updates files metadata.
@@ -70,9 +71,13 @@ export default class EventsListener {
       // The file was not in directory that we're syncing with GitHub
       return;
     }
-
-    this.metadataStore.data.files[filePath].deleted = true;
-    this.metadataStore.data.files[filePath].deletedAt = Date.now();
+    const data = this.metadataStore.data.files[filePath];
+    if (!data) {
+      // The file was never tracked, nothing to mark as deleted
+      return;
+    }
+    data.deleted = true;
+    data.deletedAt = Date.now();
     await this.metadataStore.save();
     await this.logger.info("Updated deleted file", filePath);
   }
@@ -100,8 +105,19 @@ export default class EventsListener {
       );
       return;
     }
-    this.metadataStore.data.files[file.path].lastModified = Date.now();
-    this.metadataStore.data.files[file.path].dirty = true;
+    if (!data) {
+      // The file was not tracked yet, track it as a new local change.
+      this.metadataStore.data.files[file.path] = {
+        path: file.path,
+        sha: null,
+        dirty: true,
+        justDownloaded: false,
+        lastModified: Date.now(),
+      };
+    } else {
+      data.lastModified = Date.now();
+      data.dirty = true;
+    }
     await this.metadataStore.save();
     await this.logger.info("Updated modified file", file.path);
   }
@@ -139,7 +155,18 @@ export default class EventsListener {
     if (filePath === `${this.vault.configDir}/${MANIFEST_FILE_NAME}`) {
       // Manifest file must always be synced
       return true;
-    } else if (
+    }
+
+    if (
+      isIgnoredPath(
+        filePath,
+        parseIgnorePatterns(this.settings.ignorePatterns),
+      )
+    ) {
+      return false;
+    }
+
+    if (
       filePath === `${this.vault.configDir}/workspace.json` ||
       filePath === `${this.vault.configDir}/workspace-mobile.json`
     ) {

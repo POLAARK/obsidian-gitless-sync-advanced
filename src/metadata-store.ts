@@ -1,6 +1,7 @@
 import { Vault, normalizePath } from "obsidian";
 
-export const MANIFEST_FILE_NAME = "github-sync-metadata.json" as const;
+export const MANIFEST_FILE_NAME =
+  "github-gitless-sync-advanced-metadata.json" as const;
 
 /**
  * A file metadata.

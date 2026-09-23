@@ -7,8 +7,14 @@ import {
 } from "obsidian";
 import { GitHubSyncSettings, DEFAULT_SETTINGS } from "./settings/settings";
 import GitHubSyncSettingsTab from "./settings/tab";
-import SyncManager, { ConflictFile, ConflictResolution } from "./sync-manager";
+import SyncManager, {
+  BootstrapRequiredError,
+  ConflictFile,
+  ConflictResolution,
+  OperationOptions,
+} from "./sync-manager";
 import Logger from "./logger";
+import GitOperationsModal from "./views/git-operations-modal";
 import {
   ConflictsResolutionView,
   CONFLICTS_RESOLUTION_VIEW_TYPE,
@@ -133,12 +139,99 @@ export default class GitHubSyncPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "git-operations",
+      name: "Open git operations",
+      repeatable: false,
+      icon: "git-merge",
+      callback: () => this.openGitOperationsModal(),
+    });
+
+    this.addCommand({
+      id: "pull",
+      name: "Pull from GitHub (remote to local)",
+      repeatable: false,
+      icon: "download",
+      callback: () => this.runOperation(() => this.syncManager.pull()),
+    });
+
+    this.addCommand({
+      id: "push",
+      name: "Push to GitHub (local to remote)",
+      repeatable: false,
+      icon: "upload",
+      callback: () => this.runOperation(() => this.syncManager.push()),
+    });
+
+    this.addCommand({
+      id: "force-pull",
+      name: "Force pull (overwrite local with remote)",
+      repeatable: false,
+      icon: "alert-triangle",
+      callback: () =>
+        this.runOperation(() => this.syncManager.forcePull(), true),
+    });
+
+    this.addCommand({
+      id: "force-push",
+      name: "Force push (overwrite remote with local)",
+      repeatable: false,
+      icon: "alert-triangle",
+      callback: () =>
+        this.runOperation(() => this.syncManager.forcePush(), true),
+    });
+
+    this.addCommand({
       id: "merge",
       name: "Open sync conflicts view",
       repeatable: false,
       icon: "refresh-cw",
       callback: this.openConflictsView.bind(this),
     });
+  }
+
+  /**
+   * Runs an operation and updates the status bar once done.
+   */
+  private async runOperation(
+    operation: () => Promise<unknown>,
+    confirmForce = false,
+  ) {
+    if (confirmForce) {
+      // Force operations from the command palette go through the modal so the
+      // user always gets the confirmation dialog.
+      this.openGitOperationsModal();
+      return;
+    }
+    await operation();
+    this.updateStatusBarItem();
+  }
+
+  openGitOperationsModal() {
+    if (
+      this.settings.githubToken === "" ||
+      this.settings.githubOwner === "" ||
+      this.settings.githubRepo === "" ||
+      this.settings.githubBranch === ""
+    ) {
+      new Notice("Sync plugin not configured");
+      return;
+    }
+    new GitOperationsModal(this.app, this).open();
+  }
+
+  /**
+   * Completes the first sync after the user picked a bootstrap strategy.
+   */
+  async completeBootstrap(
+    mode: "remote" | "local" | "merge",
+    options: OperationOptions = {},
+  ) {
+    const success = await this.syncManager.bootstrap(mode, options);
+    if (success) {
+      this.settings.firstSync = false;
+      await this.saveSettings();
+    }
+    this.updateStatusBarItem();
   }
 
   async sync() {
@@ -156,18 +249,33 @@ export default class GitHubSyncPlugin extends Plugin {
       try {
         await this.syncManager.firstSync();
         this.settings.firstSync = false;
-        this.saveSettings();
+        await this.saveSettings();
         // Shown only if sync doesn't fail
         new Notice("Sync successful", 5000);
       } catch (err) {
+        notice.hide();
+        if (err instanceof BootstrapRequiredError) {
+          // Let the user choose how to reconcile the two sides.
+          this.openGitOperationsModal();
+          return;
+        }
         // Show the error to the user, it's not automatically dismissed to make sure
         // the user sees it.
         new Notice(`Error syncing. ${err}`);
+        this.updateStatusBarItem();
+        return;
       }
       notice.hide();
-    } else {
-      await this.syncManager.sync();
     }
+
+    if (this.settings.advancedMode) {
+      // In advanced mode the sync entry point opens the operations modal so the
+      // user can choose what to do.
+      this.openGitOperationsModal();
+      return;
+    }
+
+    await this.syncManager.sync();
     this.updateStatusBarItem();
   }
 

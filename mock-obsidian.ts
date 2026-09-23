@@ -7,9 +7,19 @@ import {
 } from "fs";
 import * as path from "path";
 
+// Mock Obsidian file system classes
+export class TAbstractFile {
+  path: string = "";
+}
+
+export class TFile extends TAbstractFile {}
+
+export class TFolder extends TAbstractFile {
+  children: TAbstractFile[] = [];
+}
+
 // Mock Obsidian's Vault class
-export class Vault {
-  configDir: string;
+export class Vault {  configDir: string;
   private rootPath: string;
 
   constructor(rootPath: string) {
