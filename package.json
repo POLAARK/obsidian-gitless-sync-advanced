@@ -7,7 +7,8 @@
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "version": "node version-bump.mjs",
-    "benchmark": "tsx benchmark.ts"
+    "benchmark": "tsx benchmark.ts",
+    "check:brat": "node scripts/check-brat-assets.mjs"
   },
   "keywords": [],
   "author": "Silvano Cerza",
